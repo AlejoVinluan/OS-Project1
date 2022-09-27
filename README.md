@@ -139,6 +139,7 @@ Memory
    29 = Int 
    30 = IRet
    50 = End	Load the value into the AC
+   
 Load the value at the address into the AC
 Load the value from the address found in the given address into the AC
 (for example, if LoadInd 500, and 500 contains 100, then load from 100).
