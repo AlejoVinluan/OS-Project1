@@ -43,6 +43,9 @@ public class Memory {
             // Change command so that we only access the first value
             command = command.split(" ")[0];
 
+            if(command.length() == 0)
+                continue;
+
             // Check if line starts with a comment
             if(command.charAt(0) == '/'){
                 continue;
@@ -50,7 +53,7 @@ public class Memory {
 
             // If the command starts with a period, change index
             if(command.charAt(0) == '.'){
-                String newIndex = command.substring(1,command.length()-1);
+                String newIndex = command.substring(1,command.length());
                 memoryCount = Integer.parseInt(newIndex);
                 continue;
             }

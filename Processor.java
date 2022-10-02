@@ -35,12 +35,14 @@ public class Processor {
     static Scanner sc;
     // Shut down Processor when needed
     static boolean processorRunning;
+    // Enable kernel
+    static boolean kernel;
 
     // Reads from memory table
-    public static int readMemory(int index){
+    public static int read(int index){
         // Check if user is attempting to access kernel memory
-        if(index > 999){
-            throw new Error("Unable to access system memory.");
+        if(index > 999 && !kernel){
+            throw new Error("Memory violation: accessing system address 1000 in user mode ");
         }
         // Print command of "read" and index
         //  - [0,indexRead,-1(default)]
@@ -50,25 +52,23 @@ public class Processor {
         return Integer.parseInt(sc.nextLine());
     }
 
-    public static void writeMemory(int index, int value){
-        // Check if user is attempting to access kernel memory
-        if(index > 999){
-            throw new Error("Unable to write to system memory.");
-        }
+    public static void write(int index, int value){
         // Print command of "write", index, and value
         // - [1,indexModified,valueStored]
-        pw.printf("1,%d,%d",index,value);
+        //System.out.println("WRITE: " + index);
+        pw.printf("1,%d,%d\n",index,value);
         pw.flush();
     }
 
     // Read current PC (program counter)
     public static void fetch(){
         // Fetch will read next instruction in PC
-        IR = readMemory(PC);
+        IR = read(PC);
         PC++;
     }
 
     public static void execute(){
+        //System.out.println("Executing instruction " + IR);
         switch(IR){
             // Load value into AC
             case 1:
@@ -78,32 +78,32 @@ public class Processor {
             // Load value at address into AC
             case 2:
                 fetch();
-                AC = readMemory(IR);
+                AC = read(IR);
                 break;
             // Load value from address in given address into AC
             case 3:
                 fetch();
-                int temp = readMemory(IR);
-                AC = readMemory(temp);
+                int temp = read(IR);
+                AC = read(temp);
                 break;
             // Load value at address + x into AC
             case 4:
                 fetch();
-                AC = readMemory(IR + X);
+                AC = read(IR + X);
                 break;
             // Load value address + y into AC
             case 5:
                 fetch();
-                AC = readMemory(IR + Y);
+                AC = read(IR + Y);
                 break;
             // Loads adderss SP + x into AC
             case 6:
-                AC = readMemory(SP + X);
+                AC = read(SP + X);
                 break;
             // Store AC into address
             case 7:
                 fetch();
-                writeMemory(IR,AC);
+                write(IR,AC);
                 break;
             case 8:
                 Random rand = new Random();
@@ -164,11 +164,11 @@ public class Processor {
             case 23:
                 fetch();
                 SP--;
-                writeMemory(SP,PC);
+                write(SP,PC);
                 PC = IR;
                 break;
             case 24:
-                PC = readMemory(SP);
+                PC = read(SP);
                 SP++;
                 break;
             case 25:
@@ -179,25 +179,63 @@ public class Processor {
                 break;
             case 27:
                 SP--;
-                writeMemory(SP,AC);
+                write(SP,AC);
                 break;
             case 28:
-                AC = readMemory(SP);
+                AC = read(SP);
                 SP++;
                 break;
             case 29:
-                System.out.println("Need to do 29");
+                if(!kernel){
+                    kernel = true;
+                    /*
+                     * Save user state in stack as:
+                     *  [SP, PC, IR, AC, X, Y]
+                     */
+                    int userSP = SP;
+                    SP = 2000;
+                    SP--;
+                    write(SP, userSP);
+                    SP--;
+                    write(SP, PC);
+                    SP--;
+                    write(SP, IR);
+                    SP--;
+                    write(SP, AC);
+                    SP--;
+                    write(SP, X);
+                    SP--;
+                    write(SP, Y);
+                    PC = 1500;
+                }
                 break;
             case 30:
-                System.out.println("Need to do 30");
+                /*
+                 * Take case 29 and read it backwards,
+                 *  then increment SP after each read to retrieve user values.
+                 */
+                Y = read(SP);
+                SP++;
+                X = read(SP);
+                SP++;
+                AC = read(SP);
+                SP++;
+                IR = read(SP);
+                SP++;
+                PC = read(SP);
+                SP++;
+                SP = read(SP);
+                SP++;
+                // Exit kernel mode at the end to avoid violations reading SP
+                kernel = false;
                 break;
             case 50:
-            pw.printf("2,-1,-1");
-            processorRunning = false;
-            break;
+                pw.printf("2,-1,-1");
+                processorRunning = false;
+                break;
+            }
+            return;
         }
-        return;
-    }
 
     public static void main(String[] args) throws IOException{
         // Check that a file was given in args[0]
@@ -207,7 +245,7 @@ public class Processor {
 
         //static int PC, SP, IR, AC, X, Y;
         PC = 0;
-        SP = 1999;
+        SP = 1000;
         IR = 0;
         AC = 0;
         X = 0;
@@ -240,6 +278,23 @@ public class Processor {
             fetch();
             // execute instruction in IR
             execute();
+            if(time >= timer && !kernel){
+                kernel = true;
+                int userSP = SP;
+                SP = 1999;
+                write(userSP, SP);
+                SP--;
+                write(PC, SP);
+                SP--;
+                write(IR, SP);
+                SP--;
+                write(AC, SP);
+                SP--;
+                write(X, SP);
+                SP--;
+                write(Y, SP);
+                //PC = 1000;
+            }
         }
 
 
