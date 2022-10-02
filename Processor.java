@@ -33,6 +33,8 @@ public class Processor {
     static PrintWriter pw;
     // Scanner to listen for input coming from Memory
     static Scanner sc;
+    // Shut down Processor when needed
+    static boolean processorRunning;
 
     // Reads from memory table
     public static int readMemory(int index){
@@ -42,7 +44,7 @@ public class Processor {
         }
         // Print command of "read" and index
         //  - [0,indexRead,-1(default)]
-        pw.printf("0,%d,-1",index);
+        pw.printf("0,%d,-1\n",index);
         pw.flush();
         // Returns what was in the given index
         return Integer.parseInt(sc.nextLine());
@@ -160,9 +162,41 @@ public class Processor {
                     PC = IR;
                 break;
             case 23:
+                fetch();
+                SP--;
+                writeMemory(SP,PC);
+                PC = IR;
                 break;
-
+            case 24:
+                PC = readMemory(SP);
+                SP++;
+                break;
+            case 25:
+                X++;
+                break;
+            case 26:
+                X--;
+                break;
+            case 27:
+                SP--;
+                writeMemory(SP,AC);
+                break;
+            case 28:
+                AC = readMemory(SP);
+                SP++;
+                break;
+            case 29:
+                System.out.println("Need to do 29");
+                break;
+            case 30:
+                System.out.println("Need to do 30");
+                break;
+            case 50:
+            pw.printf("2,-1,-1");
+            processorRunning = false;
+            break;
         }
+        return;
     }
 
     public static void main(String[] args) throws IOException{
@@ -170,6 +204,14 @@ public class Processor {
         if(args.length < 2){
             throw new Error("Not enough arguments. Please specify user file and timer.");
         }
+
+        //static int PC, SP, IR, AC, X, Y;
+        PC = 0;
+        SP = 1999;
+        IR = 0;
+        AC = 0;
+        X = 0;
+        Y = 0;
 
         // Set time to 0 and timer to 
         int time = 0;
@@ -189,11 +231,11 @@ public class Processor {
         // Used to listen for input from memory file
         sc = new Scanner(proc.getInputStream());
 
-        // Begin running Processor
-        boolean running = true;
         PC = 0;
-
-        while(running || time < timer + 1){
+        processorRunning = true;
+        while(processorRunning){
+            // Increment timer
+            time++;
             // fetch instruction and store in IR
             fetch();
             // execute instruction in IR

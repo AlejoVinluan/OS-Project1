@@ -69,7 +69,7 @@ public class Memory {
 
     public static void write(int index, int val){
         // Check if user wants to write to system code.
-        memory[memoryCount] = val;
+        memory[index] = val;
     }
 
     public static void main(String[] args) throws FileNotFoundException{
